@@ -94,15 +94,17 @@ ds.abs_vel_reshaped = ds.abs_vel.reshape(*ds.abs_vel.shape[:1], -1)
 ds.abs_vel_mean     = ds.abs_vel_reshaped.mean(axis=0)
 
 ds.abs_vel_subtracted = ds.abs_vel_reshaped - np.repeat([ds.abs_vel_mean],np.shape(ds.abs_vel)[0],axis=0)    
+ 
+# np.reshape(ds.abs_vel_subtracted,np.shape(ds.abs_vel))
 
 #Performing reduced SVD
 U, S, VT = np.linalg.svd(ds.abs_vel_subtracted, full_matrices = False)
 
 j = 0
 
-for r in (1,4,16,32):
+for r in (1,2):
     #Constructing a low rank approximation of the image
-    Xapprox = U[:,:r] @ S[:r,:r] @ VT[:r,:]
+    Xapprox = U[:,:r] @ (np.diag(S[:r]) @ VT[:r,:])
     plt.figure(j+1)
     img = plt.imshow(Xapprox)
     plt.set_cmap('gray')
