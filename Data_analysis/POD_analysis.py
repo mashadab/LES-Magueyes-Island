@@ -90,7 +90,7 @@ ds = extract('./Data/wrfout_d01_2020-12-03_00_00_00',ds)
 
 
 #Reshape the data except for first value which is time in hours
-ds.abs_vel_reshaped = ds.abs_vel.reshape(*ds.abs_vel.shape[:1], -1)
+ds.abs_vel_reshaped = (ds.abs_vel.data).reshape(*ds.abs_vel.shape[:1], -1)
 ds.abs_vel_mean     = ds.abs_vel_reshaped.mean(axis=0)
 
 ds.abs_vel_subtracted = ds.abs_vel_reshaped - np.repeat([ds.abs_vel_mean],np.shape(ds.abs_vel)[0],axis=0)    
@@ -102,25 +102,25 @@ U, S, VT = np.linalg.svd(ds.abs_vel_subtracted, full_matrices = False)
 
 j = 0
 
-for r in (1,2):
+for r in (2,3,10):
     #Constructing a low rank approximation of the image
     Xapprox = U[:,:r] @ (np.diag(S[:r]) @ VT[:r,:])
     plt.figure(j+1)
-    img = plt.imshow(Xapprox)
-    plt.set_cmap('gray')
-    plt.axis('off')
+    plt.contourf(ds.long[1,:,:],ds.lat[1,:,:] ,Xapprox.reshape(np.shape(ds.abs_vel))[0,0,:,:],cmap="coolwarm",levels=100)
     plt.title(f' r= {r}')
-    plt.savefig(f'svd_{r}modes.jpg')
+    clb=plt.colorbar()
+    clb.set_label(r'Velocity (m/yr)')
+    plt.savefig(f'svd_{r}modes_time0.jpg')
     j += 1
 
 plt.figure(j+1)
-plt.semilogy(np.diag(S))
+plt.semilogy(S)
 plt.ylabel('Singular values')
 plt.xlabel('Number of modes')
 plt.savefig('singular_values.jpg')
 
 plt.figure(j+2)
-plt.plot(np.cumsum(np.diag(S))/np.sum(np.diag(S)))
+plt.plot(np.cumsum((S))/np.sum((S)))
 plt.ylabel('Cumulative sum of Singular values')
 plt.xlabel('Number of modes')
 plt.savefig('cum_sum_singular_values.jpg')
