@@ -12,6 +12,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 #Making classes
+def make_class(new_class):
+    class new_class:
+        def __init__(self):
+            self.x = []
+            self.y = []
+            self.v = []
+            self.vx = []
+
 class ds:
     def __init__(self):
         self.x = []
@@ -46,7 +54,7 @@ def plotting(ds_out):
     plt.savefig(f'{ds_out.filename}_2Dabs_velocity.pdf',bbox_inches='tight', dpi = 600)
  
     #Angle
-    ds_out.angle =  np.arctan(ds.v[1,1,:-1,:]/ds.u[1,1,:,:-1]) * 180 / np.pi
+    ds_out.angle =  np.arctan2(ds.v[1,1,:-1,:],ds.u[1,1,:,:-1]) * 180 / np.pi + 180
     fig = plt.figure(figsize=(15,7.5) , dpi=100)
     plot = [plt.contourf(ds.long[1,:,:],ds.lat[1,:,:] ,(ds.angle),cmap="coolwarm",levels=100)]
     clb = fig.colorbar(plot[0], orientation='vertical',aspect=50, pad=-0.1)
