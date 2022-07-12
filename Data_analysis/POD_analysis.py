@@ -1,23 +1,27 @@
 
 """
-Analyzing the Wind velocity data
+Analyzing the Wind velocity data using Spectral POD
 Mohammad Afzal Shadab
-Date modified: 07/02/22
+Date modified: 07/12/22
 Email: mashadab@utexas.edu
+Website: https://github.com/tjburrows/spod_python
 """
 
 #Importing packages
 import netCDF4 as nc
+import h5py
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+
 
 #Making classes
 class ds:
     def __init__(self):
-        self.lat = []
-        self.long = []
-        self.u = []
+        self.x = []
+        self.y = []
         self.v = []
+        self.vx = []
 
 #A function to extract data
 def extract(filename,ds_out):
@@ -36,7 +40,7 @@ def extract(filename,ds_out):
 
 #A function to extract data
 def plotting(ds_out):    
-    #Absolute velocity error
+    #Absolute velocity
     fig = plt.figure(figsize=(15,7.5) , dpi=100)
     plot = [plt.contourf(ds.long[1,:,:],ds.lat[1,:,:],ds_out.abs_vel[1,1,:,:],cmap="coolwarm",levels=100)]
     clb = fig.colorbar(plot[0], orientation='vertical',aspect=50, pad=-0.1)
@@ -82,8 +86,41 @@ def plotting(ds_out):
 ds = extract('./Data/wrfout_d01_2020-12-03_00_00_00',ds)
 
 #Plotting the data
-plotting(ds)
+#plotting(ds)
 
 
+#Reshape the data except for first value which is time in hours
+ds.abs_vel_reshaped = ds.abs_vel.reshape(*ds.abs_vel.shape[:1], -1)
+ds.abs_vel_mean     = ds.abs_vel_reshaped.mean(axis=0)
+
+ds.abs_vel_subtracted = ds.abs_vel_reshaped - np.repeat([ds.abs_vel_mean],np.shape(ds.abs_vel)[0],axis=0)    
+
+#Performing reduced SVD
+U, S, VT = np.linalg.svd(ds.abs_vel_subtracted, full_matrices = False)
+
+j = 0
+
+for r in (1,4,16,32):
+    #Constructing a low rank approximation of the image
+    Xapprox = U[:,:r] @ S[:r,:r] @ VT[:r,:]
+    plt.figure(j+1)
+    img = plt.imshow(Xapprox)
+    plt.set_cmap('gray')
+    plt.axis('off')
+    plt.title(f' r= {r}')
+    plt.savefig(f'svd_{r}modes.jpg')
+    j += 1
+
+plt.figure(j+1)
+plt.semilogy(np.diag(S))
+plt.ylabel('Singular values')
+plt.xlabel('Number of modes')
+plt.savefig('singular_values.jpg')
+
+plt.figure(j+2)
+plt.plot(np.cumsum(np.diag(S))/np.sum(np.diag(S)))
+plt.ylabel('Cumulative sum of Singular values')
+plt.xlabel('Number of modes')
+plt.savefig('cum_sum_singular_values.jpg')
 
 
