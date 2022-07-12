@@ -12,7 +12,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 #Making classes
-class ds2018:
+class ds:
     def __init__(self):
         self.x = []
         self.y = []
@@ -23,80 +23,66 @@ class ds2018:
 def extract(filename,ds_out):
     fn = filename + '.nc'    
     ds = nc.Dataset(fn)      #importing the file
-    print(ds)                #checking datasets
+    #print(ds)                #checking datasets
     ds_out.filename = filename
-    ds_out.x = ds['x'][:]           #x location [m]
-    ds_out.y = ds['y'][:]           #y location [m]
-    ds_out.v = ds['v'][:]           #absolute velocity [m/yr]
-    ds_out.vx = ds['vx'][:]         #x velocity [m/yr]
-    ds_out.vy = ds['vy'][:]         #y velocity [m/yr]
-    ds_out.v_err  = ds['v_err'][:]  #absolute velocity error [m/yr]
-    ds_out.vx_err = ds['vx_err'][:] #x velocity error [m/yr]
-    ds_out.vy_err = ds['vy_err'][:] #y velocity error [m/yr]
-    ds_out.date = ds['date'][:]     #Effective date since 01 Jan 0000
-    ds_out.dt   = ds['dt'][:]       #Effective image pair date separation
-    ds_out.count= ds['count'][:]    #Number of velocitites in the weighted average
-    ds_out.chip_size= ds['chip_size_max'][:] #Maxium accepted search chip size
-    ds_out.ocean= ds['ocean'][:]    #Ocean mask
-    ds_out.rock = ds['rock'][:]     #Rock mask
-    ds_out.ice  = ds['ice'][:]      #Ice mask
-    
-    #Making a meshgrid
-    ds_out.X,ds_out.Y = np.meshgrid(ds2018.x,ds2018.y)
+    ds_out.lat  = ds['XLAT'][:]       #x location [m]
+    ds_out.long = ds['XLONG'][:]      #y location [m]
+    ds_out.u    = ds['U'][:]          #absolute velocity [m/yr]
+    ds_out.v    = ds['V'][:]         #x velocity [m/yr]
+    ds_out.w    = ds['W'][:]         #x velocity [m/yr]    
     
     return ds_out
 
 #A function to extract data
-def plotting(ds_out):
-    #Absolute velocity
-    print('Max velocity', np.max(ds_out.v[~np.isnan(ds_out.v)]),    'm/yr \n',\
-          'Min velocity', np.min(ds_out.v[~np.isnan(ds_out.v)]),    'm/yr \n',\
-          'Avg velocity', np.average(ds_out.v[~np.isnan(ds_out.v)]),'m/yr \n')
-    fig = plt.figure(figsize=(15,7.5) , dpi=100)
-    plot = [plt.contourf(ds_out.X, ds_out.Y, ds_out.v,cmap="coolwarm")]
-    clb = fig.colorbar(plot[0], orientation='vertical',aspect=50, pad=-0.1)
-    clb.set_label(r'Velocity (m/yr)')
-    plt.ylabel(r'$y$')
-    plt.xlabel(r'$x$')
-    plt.axis('scaled')
-    plt.savefig(f'{ds_out.filename}_velocity.pdf',bbox_inches='tight', dpi = 600)
-    
+def plotting(ds_out):    
     #Absolute velocity error
     fig = plt.figure(figsize=(15,7.5) , dpi=100)
-    plot = [plt.contourf(ds_out.X,ds_out.Y, ds_out.v_err,cmap="coolwarm")]
+    plot = [plt.contourf(ds.long[1,:,:],ds.lat[1,:,:] ,np.sqrt(ds.u[1,1,:,:-1]**2+ds.v[1,1,:-1,:]**2),cmap="coolwarm",levels=100)]
     clb = fig.colorbar(plot[0], orientation='vertical',aspect=50, pad=-0.1)
-    clb.set_label(r'Velocity error (m/yr)')
+    clb.set_label(r'Absolute Velocity (m/yr)')
     plt.ylabel(r'$y$')
     plt.xlabel(r'$x$')
     plt.axis('scaled')
-    plt.savefig(f'{ds_out.filename}_velocity_error.pdf',bbox_inches='tight', dpi = 600)
+    plt.savefig(f'{ds_out.filename}_2Dabs_velocity.pdf',bbox_inches='tight', dpi = 600)
+ 
+    #Angle
+    ds_out.angle =  np.arctan(ds.v[1,1,:-1,:]/ds.u[1,1,:,:-1]) * 180 / np.pi
+    fig = plt.figure(figsize=(15,7.5) , dpi=100)
+    plot = [plt.contourf(ds.long[1,:,:],ds.lat[1,:,:] ,(ds.angle),cmap="coolwarm",levels=100)]
+    clb = fig.colorbar(plot[0], orientation='vertical',aspect=50, pad=-0.1)
+    clb.set_label(r'Angle ($^o$)')
+    plt.ylabel(r'$y$')
+    plt.xlabel(r'$x$')
+    plt.axis('scaled')
+    plt.savefig(f'{ds_out.filename}_Angle.pdf',bbox_inches='tight', dpi = 600)
     
     #X velocity
     fig = plt.figure(figsize=(15,7.5) , dpi=100)
-    plot = [plt.contourf(ds_out.X,ds_out.Y, ds_out.vx,cmap="coolwarm")]
+    plot = [plt.contourf(ds.long[1,:,:],ds.lat[1,:,:] ,(ds.u[1,1,:,:-1]),cmap="coolwarm",levels=100)]
     clb = fig.colorbar(plot[0], orientation='vertical',aspect=50, pad=-0.1)
     clb.set_label(r'X - Velocity (m/yr)')
     plt.ylabel(r'$y$')
     plt.xlabel(r'$x$')
     plt.axis('scaled')
-    plt.savefig(f'{ds_out.filename}_Xvelocity.pdf',bbox_inches='tight', dpi = 600)
+    plt.savefig(f'{ds_out.filename}_Uvelocity.pdf',bbox_inches='tight', dpi = 600)
     
     #Y velocity
     fig = plt.figure(figsize=(15,7.5) , dpi=100)
-    plot = [plt.contourf(ds_out.X,ds_out.Y, ds_out.vy,cmap="coolwarm")]
+    plot = [plt.contourf(ds.long[1,:,:],ds.lat[1,:,:] ,(ds.v[1,1,:-1,:]),cmap="coolwarm",levels=100)]
     clb = fig.colorbar(plot[0], orientation='vertical',aspect=50, pad=-0.1)
     clb.set_label(r'Y - Velocity (m/yr)')
     plt.ylabel(r'$y$')
     plt.xlabel(r'$x$')
     plt.axis('scaled')
-    plt.savefig(f'{ds_out.filename}_Yvelocity.pdf',bbox_inches='tight', dpi = 600)
-
+    plt.savefig(f'{ds_out.filename}_Vvelocity.pdf',bbox_inches='tight', dpi = 600)
+    
+    return ds_out
 
 #Extracting the data into a structure
-ds2018 = extract('HMA_G0240_2018',ds2018)
+ds = extract('./Data/wrfout_d01_2020-12-03_00_00_00',ds)
 
 #Plotting the data
-plotting(ds2018)
+plotting(ds)
 
 
 
