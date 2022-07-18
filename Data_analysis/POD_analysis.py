@@ -25,7 +25,7 @@ class ds:
 
 #A function to extract data
 def extract(filename,ds_out):
-    fn = filename + '.nc'    
+    fn = filename     
     ds = nc.Dataset(fn)      #importing the file
     #print(ds)                #checking datasets
     ds_out.filename = filename
